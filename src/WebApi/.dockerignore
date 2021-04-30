@@ -26,3 +26,4 @@ README.md
 .vs
 .vscode
 .idea
+*.env
