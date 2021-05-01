@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models.Context;
 using Models.Entities;
+using Models.Enums;
 using WebApi.DTOs;
 
 namespace WebApi.Controllers
@@ -113,7 +115,15 @@ namespace WebApi.Controllers
                 return NotFound();
             }
 
-            _context.Users.Remove(user);
+            var blockedState = await _context.UserStates.FirstOrDefaultAsync(s => s.Code == UserStateCode.Blocked);
+            if (blockedState == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            user.State.Id = blockedState.Id;
+
+            _context.Entry(user).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
             return user;
