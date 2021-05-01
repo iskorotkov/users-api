@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using WebApi.Enums;
+using Models.Enums;
 
-namespace WebApi.Entities
+namespace Models.Entities
 {
     public class UserState
     {

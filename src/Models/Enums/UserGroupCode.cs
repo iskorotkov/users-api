@@ -1,4 +1,4 @@
-namespace WebApi.Enums
+namespace Models.Enums
 {
     public enum UserGroupCode
     {

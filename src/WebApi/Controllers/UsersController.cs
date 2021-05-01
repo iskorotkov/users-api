@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebApi.Context;
+using Models.Context;
+using Models.Entities;
 using WebApi.DTOs;
-using WebApi.Entities;
 
 namespace WebApi.Controllers
 {

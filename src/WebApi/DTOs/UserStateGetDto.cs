@@ -1,4 +1,4 @@
-using WebApi.Enums;
+using Models.Enums;
 
 namespace WebApi.DTOs
 {

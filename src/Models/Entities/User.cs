@@ -1,6 +1,6 @@
 using System;
 
-namespace WebApi.Entities
+namespace Models.Entities
 {
     public class User
     {
