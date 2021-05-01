@@ -51,7 +51,10 @@ namespace WebApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<UserGetDto>> GetUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users
+                .Include(u => u.Group)
+                .Include(u => u.State)
+                .FirstOrDefaultAsync(u => u.Id == id);
             if (user == null)
             {
                 return NotFound();
@@ -126,7 +129,24 @@ namespace WebApi.Controllers
             _context.Users.Add(entity);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = entity.Id }, user);
+            return CreatedAtAction("GetUser", new { id = entity.Id }, new UserGetDto
+            {
+                Id = entity.Id,
+                Login = entity.Login,
+                CreatedDate = entity.CreatedDate,
+                Group = new UserGroupGetDto
+                {
+                    Id = entity.Group.Id,
+                    Code = entity.Group.Code,
+                    Description = entity.Group.Description
+                },
+                State = new UserStateGetDto
+                {
+                    Id = entity.State.Id,
+                    Code = entity.State.Code,
+                    Description = entity.State.Description
+                }
+            });
         }
 
         // DELETE: api/Users/5
