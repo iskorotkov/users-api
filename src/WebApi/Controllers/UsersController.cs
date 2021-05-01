@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApi.Context;
@@ -15,10 +16,12 @@ namespace WebApi.Controllers
     public class UsersController : ControllerBase
     {
         private readonly WebApiContext _context;
+        private readonly IMapper _mapper;
 
-        public UsersController(WebApiContext context)
+        public UsersController(WebApiContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: api/Users
@@ -26,24 +29,9 @@ namespace WebApi.Controllers
         public async Task<ActionResult<IEnumerable<UserGetDto>>> GetUsers()
         {
             return await _context.Users
-                .Select(user => new UserGetDto
-                {
-                    Id = user.Id,
-                    Login = user.Login,
-                    CreatedDate = user.CreatedDate,
-                    Group = new UserGroupGetDto
-                    {
-                        Id = user.Group.Id,
-                        Code = user.Group.Code,
-                        Description = user.Group.Description
-                    },
-                    State = new UserStateGetDto
-                    {
-                        Id = user.State.Id,
-                        Code = user.State.Code,
-                        Description = user.State.Description
-                    }
-                })
+                .Include(u => u.Group)
+                .Include(u => u.State)
+                .Select(user => _mapper.Map<UserGetDto>(user))
                 .ToListAsync();
         }
 
@@ -60,24 +48,7 @@ namespace WebApi.Controllers
                 return NotFound();
             }
 
-            return new UserGetDto
-            {
-                Id = user.Id,
-                Login = user.Login,
-                CreatedDate = user.CreatedDate,
-                Group = new UserGroupGetDto
-                {
-                    Id = user.Group.Id,
-                    Code = user.Group.Code,
-                    Description = user.Group.Description
-                },
-                State = new UserStateGetDto
-                {
-                    Id = user.State.Id,
-                    Code = user.State.Code,
-                    Description = user.State.Description
-                }
-            };
+            return _mapper.Map<UserGetDto>(user);
         }
 
         // PUT: api/Users/5
@@ -115,7 +86,7 @@ namespace WebApi.Controllers
 
         // POST: api/Users
         [HttpPost]
-        public async Task<ActionResult<User>> PostUser(UserPostDto user)
+        public async Task<ActionResult<UserGetDto>> PostUser(UserPostDto user)
         {
             var entity = new User
             {
@@ -129,24 +100,7 @@ namespace WebApi.Controllers
             _context.Users.Add(entity);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = entity.Id }, new UserGetDto
-            {
-                Id = entity.Id,
-                Login = entity.Login,
-                CreatedDate = entity.CreatedDate,
-                Group = new UserGroupGetDto
-                {
-                    Id = entity.Group.Id,
-                    Code = entity.Group.Code,
-                    Description = entity.Group.Description
-                },
-                State = new UserStateGetDto
-                {
-                    Id = entity.State.Id,
-                    Code = entity.State.Code,
-                    Description = entity.State.Description
-                }
-            });
+            return CreatedAtAction("GetUser", new { id = entity.Id }, _mapper.Map<UserGetDto>(entity));
         }
 
         // DELETE: api/Users/5

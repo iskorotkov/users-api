@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApi.Context;
@@ -13,10 +14,12 @@ namespace WebApi.Controllers
     public class GroupsController : ControllerBase
     {
         private readonly WebApiContext _context;
+        private readonly IMapper _mapper;
 
-        public GroupsController(WebApiContext context)
+        public GroupsController(WebApiContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: api/Groups
@@ -24,12 +27,7 @@ namespace WebApi.Controllers
         public async Task<ActionResult<IEnumerable<UserGroupGetDto>>> GetUserGroups()
         {
             return await _context.UserGroups
-                .Select(group => new UserGroupGetDto
-                {
-                    Id = group.Id,
-                    Code = group.Code,
-                    Description = group.Description
-                })
+                .Select(group => _mapper.Map<UserGroupGetDto>(group))
                 .ToListAsync();
         }
     }

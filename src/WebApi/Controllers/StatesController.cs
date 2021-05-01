@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApi.Context;
@@ -13,10 +14,12 @@ namespace WebApi.Controllers
     public class StatesController : ControllerBase
     {
         private readonly WebApiContext _context;
+        private readonly IMapper _mapper;
 
-        public StatesController(WebApiContext context)
+        public StatesController(WebApiContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: api/States
@@ -24,12 +27,7 @@ namespace WebApi.Controllers
         public async Task<ActionResult<IEnumerable<UserStateGetDto>>> GetUserStates()
         {
             return await _context.UserStates
-                .Select(state => new UserStateGetDto
-                {
-                    Id = state.Id,
-                    Code = state.Code,
-                    Description = state.Description
-                })
+                .Select(state => _mapper.Map<UserStateGetDto>(state))
                 .ToListAsync();
         }
     }

@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using WebApi.Context;
+using WebApi.Mapper;
 
 namespace WebApi
 {
@@ -25,6 +26,8 @@ namespace WebApi
 
             var connStr = Configuration.GetConnectionString("WebApiContext");
             services.AddDbContext<WebApiContext>(builder => builder.UseSqlServer(connStr));
+
+            services.AddAutoMapper(MapperExtensions.Configure);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
