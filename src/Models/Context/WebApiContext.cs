@@ -7,7 +7,6 @@ namespace Models.Context
     {
         public WebApiContext(DbContextOptions<WebApiContext> options) : base(options)
         {
-            Database.EnsureCreated();
         }
 
         public DbSet<User> Users { get; set; }
