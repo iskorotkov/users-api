@@ -5,6 +5,5 @@ namespace WebApi.DTOs
         public string Login { get; set; }
         public string Password { get; set; }
         public int GroupId { get; set; }
-        public int StateId { get; set; }
     }
 }

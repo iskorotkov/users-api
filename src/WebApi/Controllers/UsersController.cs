@@ -70,18 +70,16 @@ namespace WebApi.Controllers
             }
 
             var entity = await _context.Users.FindAsync(user.Id);
-            var existed = entity != null;
-            entity ??= new User
+            if (entity == null)
             {
-                CreatedDate = DateTime.Now,
-            };
+                return NotFound();
+            }
 
             entity.Login = user.Login;
             entity.Password = user.Password;
             entity.GroupId = user.GroupId;
-            entity.StateId = user.StateId;
 
-            _context.Entry(entity).State = existed ? EntityState.Modified : EntityState.Added;
+            _context.Entry(entity).State = EntityState.Modified;
 
             if (!await _adminElevation.CanEnterGroup(entity))
             {
@@ -109,13 +107,19 @@ namespace WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<UserGetDto>> PostUser(UserPostDto user)
         {
+            var activeState = await _context.UserStates.FirstOrDefaultAsync(s => s.Code == UserStateCode.Active);
+            if (activeState == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
             var entity = new User
             {
                 Login = user.Login,
                 Password = user.Password,
                 CreatedDate = DateTime.Now,
                 GroupId = user.GroupId,
-                StateId = user.StateId
+                StateId = activeState.Id
             };
 
             if (!await _adminElevation.CanEnterGroup(entity))
