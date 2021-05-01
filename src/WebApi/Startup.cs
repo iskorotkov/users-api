@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 using Admin;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -24,7 +25,9 @@ namespace WebApi
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers()
+                .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
             services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebApi", Version = "v1" }); });
 
             var connStr = Configuration.GetConnectionString("WebApiContext");
@@ -33,7 +36,7 @@ namespace WebApi
             services.AddAutoMapper(MapperExtensions.Configure);
 
             services.AddScoped<AdminElevation>();
-            services.AddScoped<SignupThrottler>(provider =>
+            services.AddScoped(provider =>
             {
                 var context = provider.GetRequiredService<WebApiContext>();
                 return new SignupThrottler(context, TimeSpan.FromSeconds(5));
