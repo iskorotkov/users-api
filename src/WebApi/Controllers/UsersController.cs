@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Admin;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Models.Context;
 using Models.Entities;
 using Models.Enums;
+using Signup;
 using WebApi.DTOs;
 
 namespace WebApi.Controllers
@@ -19,11 +21,16 @@ namespace WebApi.Controllers
     {
         private readonly WebApiContext _context;
         private readonly IMapper _mapper;
+        private readonly AdminElevation _adminElevation;
+        private readonly SignupThrottler _signupThrottler;
 
-        public UsersController(WebApiContext context, IMapper mapper)
+        public UsersController(WebApiContext context, IMapper mapper, AdminElevation adminElevation,
+            SignupThrottler signupThrottler)
         {
             _context = context;
             _mapper = mapper;
+            _adminElevation = adminElevation;
+            _signupThrottler = signupThrottler;
         }
 
         // GET: api/Users
@@ -63,11 +70,23 @@ namespace WebApi.Controllers
             }
 
             var entity = await _context.Users.FindAsync(user.Id);
+            var existed = entity != null;
+            entity ??= new User
+            {
+                CreatedDate = DateTime.Now,
+            };
+
             entity.Login = user.Login;
             entity.Password = user.Password;
             entity.GroupId = user.GroupId;
             entity.StateId = user.StateId;
-            _context.Entry(entity).State = EntityState.Modified;
+
+            _context.Entry(entity).State = existed ? EntityState.Modified : EntityState.Added;
+
+            if (!await _adminElevation.CanEnterGroup(entity))
+            {
+                return BadRequest();
+            }
 
             try
             {
@@ -98,6 +117,16 @@ namespace WebApi.Controllers
                 GroupId = user.GroupId,
                 StateId = user.StateId
             };
+
+            if (!await _adminElevation.CanEnterGroup(entity))
+            {
+                return BadRequest();
+            }
+
+            if (!await _signupThrottler.IsSignupAllowed(entity))
+            {
+                return Conflict();
+            }
 
             _context.Users.Add(entity);
             await _context.SaveChangesAsync();

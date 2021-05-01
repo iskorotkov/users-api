@@ -1,3 +1,5 @@
+using System;
+using Admin;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Models.Context;
+using Signup;
 using WebApi.Mapper;
 
 namespace WebApi
@@ -28,6 +31,13 @@ namespace WebApi
             services.AddDbContext<WebApiContext>(builder => builder.UseSqlServer(connStr));
 
             services.AddAutoMapper(MapperExtensions.Configure);
+
+            services.AddScoped<AdminElevation>();
+            services.AddScoped<SignupThrottler>(provider =>
+            {
+                var context = provider.GetRequiredService<WebApiContext>();
+                return new SignupThrottler(context, TimeSpan.FromSeconds(5));
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
