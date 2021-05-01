@@ -6,6 +6,7 @@ namespace WebApi.DTOs
     {
         public int Id { get; set; }
         public string Login { get; set; }
+        public string Password { get; set; }
         public DateTime CreatedDate { get; set; }
         public UserGroupGetDto Group { get; set; }
         public UserStateGetDto State { get; set; }
