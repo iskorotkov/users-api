@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApi.Context;
+using WebApi.DTOs;
 using WebApi.Entities;
 
 namespace WebApi.Controllers
@@ -21,35 +23,75 @@ namespace WebApi.Controllers
 
         // GET: api/Users
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<UserGetDto>>> GetUsers()
         {
-            return await _context.Users.ToListAsync();
+            return await _context.Users
+                .Select(user => new UserGetDto
+                {
+                    Id = user.Id,
+                    Login = user.Login,
+                    CreatedDate = user.CreatedDate,
+                    Group = new UserGroupGetDto
+                    {
+                        Id = user.Group.Id,
+                        Code = user.Group.Code,
+                        Description = user.Group.Description
+                    },
+                    State = new UserStateGetDto
+                    {
+                        Id = user.State.Id,
+                        Code = user.State.Code,
+                        Description = user.State.Description
+                    }
+                })
+                .ToListAsync();
         }
 
         // GET: api/Users/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
+        public async Task<ActionResult<UserGetDto>> GetUser(int id)
         {
             var user = await _context.Users.FindAsync(id);
-
             if (user == null)
             {
                 return NotFound();
             }
 
-            return user;
+            return new UserGetDto
+            {
+                Id = user.Id,
+                Login = user.Login,
+                CreatedDate = user.CreatedDate,
+                Group = new UserGroupGetDto
+                {
+                    Id = user.Group.Id,
+                    Code = user.Group.Code,
+                    Description = user.Group.Description
+                },
+                State = new UserStateGetDto
+                {
+                    Id = user.State.Id,
+                    Code = user.State.Code,
+                    Description = user.State.Description
+                }
+            };
         }
 
         // PUT: api/Users/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, User user)
+        public async Task<IActionResult> PutUser(int id, UserPutDto user)
         {
             if (id != user.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(user).State = EntityState.Modified;
+            var entity = await _context.Users.FindAsync(user.Id);
+            entity.Login = user.Login;
+            entity.Password = user.Password;
+            entity.GroupId = user.GroupId;
+            entity.StateId = user.StateId;
+            _context.Entry(entity).State = EntityState.Modified;
 
             try
             {
@@ -70,12 +112,21 @@ namespace WebApi.Controllers
 
         // POST: api/Users
         [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
+        public async Task<ActionResult<User>> PostUser(UserPostDto user)
         {
-            _context.Users.Add(user);
+            var entity = new User
+            {
+                Login = user.Login,
+                Password = user.Password,
+                CreatedDate = DateTime.Now,
+                GroupId = user.GroupId,
+                StateId = user.StateId
+            };
+
+            _context.Users.Add(entity);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            return CreatedAtAction("GetUser", new { id = entity.Id }, user);
         }
 
         // DELETE: api/Users/5
