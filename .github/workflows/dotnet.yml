@@ -23,5 +23,5 @@ jobs:
       run: dotnet build --no-restore
     - name: Test AutoMapper config
       run: dotnet test --no-build --verbosity normal --filter Mapper
-    - name: Test
+    - name: Test on SQLite database
       run: dotnet test --no-build --verbosity normal --filter Sqlite
