@@ -1,6 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 using Admin;
+using Auth.Hashing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +37,7 @@ namespace WebApi
             services.AddAutoMapper(MapperExtensions.Configure);
 
             services.AddScoped<AdminElevation>();
+            services.AddScoped<PasswordHasher>();
             services.AddScoped(provider =>
             {
                 var context = provider.GetRequiredService<WebApiContext>();

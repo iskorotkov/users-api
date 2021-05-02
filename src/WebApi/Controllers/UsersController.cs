@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Admin;
+using Auth.Hashing;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -23,14 +24,16 @@ namespace WebApi.Controllers
         private readonly IMapper _mapper;
         private readonly AdminElevation _adminElevation;
         private readonly SignupThrottler _signupThrottler;
+        private readonly PasswordHasher _passwordHasher;
 
         public UsersController(WebApiContext context, IMapper mapper, AdminElevation adminElevation,
-            SignupThrottler signupThrottler)
+            SignupThrottler signupThrottler, PasswordHasher passwordHasher)
         {
             _context = context;
             _mapper = mapper;
             _adminElevation = adminElevation;
             _signupThrottler = signupThrottler;
+            _passwordHasher = passwordHasher;
         }
 
         // GET: api/Users
@@ -112,10 +115,13 @@ namespace WebApi.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
+            var hashed = _passwordHasher.Hash(user.Password);
+
             var entity = new User
             {
                 Login = user.Login,
-                Password = user.Password,
+                PasswordHash = hashed.Hash,
+                Salt = hashed.Salt,
                 CreatedDate = DateTime.Now,
                 GroupId = user.GroupId,
                 StateId = activeState.Id

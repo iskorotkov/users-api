@@ -6,7 +6,8 @@ namespace Models.Entities
     {
         public int Id { get; set; }
         public string Login { get; set; }
-        public string Password { get; set; }
+        public string PasswordHash { get; set; }
+        public string Salt { get; set; }
         public DateTime CreatedDate { get; set; }
         public int GroupId { get; set; }
         public virtual UserGroup Group { get; set; }

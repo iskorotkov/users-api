@@ -25,6 +25,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Admin\Admin.csproj" />
+      <ProjectReference Include="..\Auth\Auth.csproj" />
       <ProjectReference Include="..\Models\Models.csproj" />
       <ProjectReference Include="..\Signup\Signup.csproj" />
     </ItemGroup>
