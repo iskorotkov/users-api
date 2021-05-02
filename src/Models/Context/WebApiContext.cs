@@ -18,6 +18,14 @@ namespace Models.Context
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("users");
+
+                entity.Property(u => u.Login).IsRequired();
+                entity.Property(u => u.PasswordHash).IsRequired();
+                entity.Property(u => u.Salt).IsRequired();
+                entity.Property(u => u.CreatedDate).IsRequired();
+                entity.Property(u => u.GroupId).IsRequired();
+                entity.Property(u => u.StateId).IsRequired();
+
                 entity.HasOne(u => u.Group)
                     .WithMany(g => g.Users)
                     .HasForeignKey(u => u.GroupId)
@@ -30,9 +38,21 @@ namespace Models.Context
                     .HasConstraintName("users_states_fk");
             });
 
-            modelBuilder.Entity<UserGroup>(entity => entity.ToTable("user_groups"));
+            modelBuilder.Entity<UserGroup>(entity =>
+            {
+                entity.ToTable("user_groups");
 
-            modelBuilder.Entity<UserState>(entity => entity.ToTable("user_states"));
+                entity.Property(g => g.Code).IsRequired();
+                entity.Property(g => g.Description).IsRequired();
+            });
+
+            modelBuilder.Entity<UserState>(entity =>
+            {
+                entity.ToTable("user_states");
+
+                entity.Property(s => s.Code).IsRequired();
+                entity.Property(s => s.Description).IsRequired();
+            });
         }
     }
 }
