@@ -23,6 +23,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\WebApi\WebApi.csproj" />
+      <ProjectReference Include="..\Utils.Seeding\Utils.Seeding.csproj" />
     </ItemGroup>
 
 </Project>
