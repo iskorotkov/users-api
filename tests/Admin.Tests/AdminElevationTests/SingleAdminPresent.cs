@@ -11,18 +11,18 @@ using Xunit;
 
 namespace Admin.Tests.AdminElevationTests
 {
-    public abstract class SingleAdminPresent
+    public abstract class SingleAdminPresent<T> where T : ISeeder, new()
     {
         private readonly ISeeder _seeder;
         private readonly UserGroup _userGroup;
         private readonly UserGroup _adminGroup;
         private readonly User _admin;
 
-        protected SingleAdminPresent(ISeeder seeder)
+        protected SingleAdminPresent()
         {
-            _seeder = seeder;
+            _seeder = new T();
 
-            using var context = new WebApiContext(seeder.DbContextOptions);
+            using var context = new WebApiContext(_seeder.DbContextOptions);
 
             _userGroup = context.UserGroups.First(g => g.Code == UserGroupCode.User);
             _adminGroup = context.UserGroups.First(g => g.Code == UserGroupCode.Admin);
@@ -83,17 +83,11 @@ namespace Admin.Tests.AdminElevationTests
         }
     }
 
-    public class SqlServerSingleAdminPresent : SingleAdminPresent
+    public class SqlServerSingleAdminPresent : SingleAdminPresent<SqlServerSeeder>
     {
-        public SqlServerSingleAdminPresent() : base(new SqlServerSeeder())
-        {
-        }
     }
 
-    public class SqliteSingleAdminPresent : SingleAdminPresent
+    public class SqliteSingleAdminPresent : SingleAdminPresent<SqliteSeeder>
     {
-        public SqliteSingleAdminPresent() : base(new SqliteSeeder())
-        {
-        }
     }
 }

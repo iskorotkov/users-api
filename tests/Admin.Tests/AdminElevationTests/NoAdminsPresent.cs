@@ -10,17 +10,17 @@ using Xunit;
 
 namespace Admin.Tests.AdminElevationTests
 {
-    public abstract class NoAdminsPresent
+    public abstract class NoAdminsPresent<T> where T : ISeeder, new()
     {
         private readonly ISeeder _seeder;
         private readonly UserGroup _userGroup;
         private readonly UserGroup _adminGroup;
 
-        protected NoAdminsPresent(ISeeder seeder)
+        protected NoAdminsPresent()
         {
-            _seeder = seeder;
+            _seeder = new T();
 
-            using var context = new WebApiContext(seeder.DbContextOptions);
+            using var context = new WebApiContext(_seeder.DbContextOptions);
 
             _userGroup = context.UserGroups.First(g => g.Code == UserGroupCode.User);
             _adminGroup = context.UserGroups.First(g => g.Code == UserGroupCode.Admin);
@@ -67,17 +67,11 @@ namespace Admin.Tests.AdminElevationTests
         }
     }
 
-    public class SqlServerNoAdminsPresent : NoAdminsPresent
+    public class SqlServerNoAdminsPresent : NoAdminsPresent<SqlServerSeeder>
     {
-        public SqlServerNoAdminsPresent() : base(new SqlServerSeeder())
-        {
-        }
     }
 
-    public class SqliteNoAdminsPresent : NoAdminsPresent
+    public class SqliteNoAdminsPresent : NoAdminsPresent<SqliteSeeder>
     {
-        public SqliteNoAdminsPresent() : base(new SqliteSeeder())
-        {
-        }
     }
 }
