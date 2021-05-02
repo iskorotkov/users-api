@@ -20,10 +20,10 @@ namespace Signup
 
         public async Task<bool> IsSignupAllowed(User user)
         {
-            var now = DateTime.Now;
+            var checkpoint = DateTime.Now - _signupTimeout;
             var loginRecentlyUsed = await _context.Users
                 .Where(u => u.Login == user.Login)
-                .AnyAsync(u => u.CreatedDate + _signupTimeout >= now);
+                .AnyAsync(u => u.CreatedDate >= checkpoint);
 
             return !loginRecentlyUsed;
         }
