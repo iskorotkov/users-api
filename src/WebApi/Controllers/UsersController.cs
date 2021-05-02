@@ -78,15 +78,15 @@ namespace WebApi.Controllers
                 return NotFound();
             }
 
+            if (!await _adminElevation.CanEnterGroup(user.GroupId, user.Id))
+            {
+                return BadRequest();
+            }
+
             entity.Login = user.Login;
             entity.GroupId = user.GroupId;
 
             _context.Entry(entity).State = EntityState.Modified;
-
-            if (!await _adminElevation.CanEnterGroup(entity))
-            {
-                return BadRequest();
-            }
 
             try
             {
@@ -115,8 +115,17 @@ namespace WebApi.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            var hashed = _passwordHasher.Hash(user.Password);
+            if (!await _adminElevation.CanEnterGroup(user.GroupId))
+            {
+                return BadRequest();
+            }
 
+            if (!await _signupThrottler.IsSignupAllowed(user.Login))
+            {
+                return Conflict();
+            }
+
+            var hashed = _passwordHasher.Hash(user.Password);
             var entity = new User
             {
                 Login = user.Login,
@@ -126,16 +135,6 @@ namespace WebApi.Controllers
                 GroupId = user.GroupId,
                 StateId = activeState.Id
             };
-
-            if (!await _adminElevation.CanEnterGroup(entity))
-            {
-                return BadRequest();
-            }
-
-            if (!await _signupThrottler.IsSignupAllowed(entity))
-            {
-                return Conflict();
-            }
 
             _context.Users.Add(entity);
             await _context.SaveChangesAsync();

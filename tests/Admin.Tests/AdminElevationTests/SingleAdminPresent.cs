@@ -52,8 +52,8 @@ namespace Admin.Tests.AdminElevationTests
                 GroupId = _adminGroup.Id
             };
 
-            (await adminElevation.CanBecomeAdmin(user)).ShouldBe(false);
-            (await adminElevation.CanEnterGroup(user)).ShouldBe(false);
+            (await adminElevation.CanBecomeAdmin(user.Id)).ShouldBe(false);
+            (await adminElevation.CanEnterGroup(user.GroupId, user.Id)).ShouldBe(false);
         }
 
         [Fact]
@@ -68,8 +68,8 @@ namespace Admin.Tests.AdminElevationTests
                 GroupId = _userGroup.Id
             };
 
-            (await adminElevation.CanBecomeAdmin(user)).ShouldBe(false);
-            (await adminElevation.CanEnterGroup(user)).ShouldBe(true);
+            (await adminElevation.CanBecomeAdmin(user.Id)).ShouldBe(false);
+            (await adminElevation.CanEnterGroup(user.GroupId, user.Id)).ShouldBe(true);
         }
 
         [Fact]
@@ -78,8 +78,8 @@ namespace Admin.Tests.AdminElevationTests
             await using var context = new WebApiContext(_seeder.DbContextOptions);
             var adminElevation = new AdminElevation(context);
 
-            (await adminElevation.CanBecomeAdmin(_admin)).ShouldBe(true);
-            (await adminElevation.CanEnterGroup(_admin)).ShouldBe(true);
+            (await adminElevation.CanBecomeAdmin(_admin.Id)).ShouldBe(true);
+            (await adminElevation.CanEnterGroup(_admin.GroupId, _admin.Id)).ShouldBe(true);
         }
     }
 

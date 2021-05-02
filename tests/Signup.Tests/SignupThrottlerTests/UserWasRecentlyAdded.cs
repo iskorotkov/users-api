@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Models.Context;
-using Models.Entities;
 using Shouldly;
 using Utils.Seeding;
 using Xunit;
@@ -29,12 +28,7 @@ namespace Signup.Tests.SignupThrottlerTests
             existingUser.CreatedDate = DateTime.Now;
             await context.SaveChangesAsync();
 
-            var userToAdd = new User
-            {
-                Login = existingUser.Login + "x"
-            };
-
-            (await signupThrottler.IsSignupAllowed(userToAdd)).ShouldBe(true);
+            (await signupThrottler.IsSignupAllowed(existingUser.Login + "x")).ShouldBe(true);
         }
 
         [Fact]
@@ -48,12 +42,7 @@ namespace Signup.Tests.SignupThrottlerTests
             existingUser.CreatedDate = DateTime.Now;
             await context.SaveChangesAsync();
 
-            var user = new User
-            {
-                Login = existingUser.Login
-            };
-
-            (await signupThrottler.IsSignupAllowed(user)).ShouldBe(false);
+            (await signupThrottler.IsSignupAllowed(existingUser.Login)).ShouldBe(false);
         }
 
         [Fact]
@@ -67,12 +56,7 @@ namespace Signup.Tests.SignupThrottlerTests
             existingUser.CreatedDate = DateTime.Now - TimeSpan.FromHours(2);
             await context.SaveChangesAsync();
 
-            var user = new User
-            {
-                Login = existingUser.Login
-            };
-
-            (await signupThrottler.IsSignupAllowed(user)).ShouldBe(true);
+            (await signupThrottler.IsSignupAllowed(existingUser.Login)).ShouldBe(true);
         }
     }
 

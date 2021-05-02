@@ -46,8 +46,8 @@ namespace Admin.Tests.AdminElevationTests
                 GroupId = _adminGroup.Id
             };
 
-            (await adminElevation.CanBecomeAdmin(user)).ShouldBe(true);
-            (await adminElevation.CanEnterGroup(user)).ShouldBe(true);
+            (await adminElevation.CanBecomeAdmin(user.Id)).ShouldBe(true);
+            (await adminElevation.CanEnterGroup(user.GroupId, user.Id)).ShouldBe(true);
         }
 
         [Fact]
@@ -62,8 +62,8 @@ namespace Admin.Tests.AdminElevationTests
                 GroupId = _userGroup.Id
             };
 
-            (await adminElevation.CanBecomeAdmin(user)).ShouldBe(true);
-            (await adminElevation.CanEnterGroup(user)).ShouldBe(true);
+            (await adminElevation.CanBecomeAdmin(user.Id)).ShouldBe(true);
+            (await adminElevation.CanEnterGroup(user.GroupId, user.Id)).ShouldBe(true);
         }
     }
 

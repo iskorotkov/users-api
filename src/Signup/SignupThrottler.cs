@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Models.Context;
-using Models.Entities;
 
 namespace Signup
 {
@@ -18,11 +17,11 @@ namespace Signup
             _signupTimeout = signupTimeout;
         }
 
-        public async Task<bool> IsSignupAllowed(User user)
+        public async Task<bool> IsSignupAllowed(string login)
         {
             var checkpoint = DateTime.Now - _signupTimeout;
             var loginRecentlyUsed = await _context.Users
-                .Where(u => u.Login == user.Login)
+                .Where(u => u.Login == login)
                 .AnyAsync(u => u.CreatedDate >= checkpoint);
 
             return !loginRecentlyUsed;
