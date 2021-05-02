@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Admin;
 using Auth.Hashing;
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models.Context;
@@ -41,6 +40,7 @@ namespace WebApi.Controllers
         public async Task<ActionResult<IEnumerable<UserGetDto>>> GetUsers()
         {
             return await _context.Users
+                .Where(u => u.State.Code == UserStateCode.Active)
                 .Include(u => u.Group)
                 .Include(u => u.State)
                 .Select(user => _mapper.Map<UserGetDto>(user))
@@ -55,7 +55,7 @@ namespace WebApi.Controllers
                 .Include(u => u.Group)
                 .Include(u => u.State)
                 .FirstOrDefaultAsync(u => u.Id == id);
-            if (user == null)
+            if (user == null || user.State.Code != UserStateCode.Active)
             {
                 return NotFound();
             }
@@ -72,10 +72,17 @@ namespace WebApi.Controllers
                 return BadRequest();
             }
 
-            var entity = await _context.Users.FindAsync(user.Id);
-            if (entity == null)
+            var entity = await _context.Users
+                .Include(u => u.State)
+                .FirstOrDefaultAsync(u => u.Id == user.Id);
+            if (entity == null || entity.State.Code != UserStateCode.Active)
             {
                 return NotFound();
+            }
+
+            if (await _context.UserGroups.FindAsync(user.GroupId) == null)
+            {
+                return BadRequest();
             }
 
             if (!await _adminElevation.CanEnterGroup(user.GroupId, user.Id))
@@ -102,17 +109,16 @@ namespace WebApi.Controllers
                 throw;
             }
 
-            return NoContent();
+            return Ok();
         }
 
         // POST: api/Users
         [HttpPost]
         public async Task<ActionResult<UserGetDto>> PostUser(UserPostDto user)
         {
-            var activeState = await _context.UserStates.FirstOrDefaultAsync(s => s.Code == UserStateCode.Active);
-            if (activeState == null)
+            if (await _context.UserGroups.FindAsync(user.GroupId) == null)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return BadRequest();
             }
 
             if (!await _adminElevation.CanEnterGroup(user.GroupId))
@@ -125,6 +131,7 @@ namespace WebApi.Controllers
                 return Conflict();
             }
 
+            var activeState = await _context.UserStates.FirstAsync(s => s.Code == UserStateCode.Active);
             var hashed = _passwordHasher.Hash(user.Password);
             var entity = new User
             {
@@ -139,25 +146,22 @@ namespace WebApi.Controllers
             _context.Users.Add(entity);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = entity.Id }, _mapper.Map<UserGetDto>(entity));
+            return CreatedAtAction("GetUser", new {id = entity.Id}, _mapper.Map<UserGetDto>(entity));
         }
 
         // DELETE: api/Users/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<UserGetDto>> DeleteUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            var user = await _context.Users
+                .Include(u=>u.State)
+                .FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null || user.State.Code != UserStateCode.Active)
             {
                 return NotFound();
             }
 
-            var blockedState = await _context.UserStates.FirstOrDefaultAsync(s => s.Code == UserStateCode.Blocked);
-            if (blockedState == null)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
-
+            var blockedState = await _context.UserStates.FirstAsync(s => s.Code == UserStateCode.Blocked);
             user.StateId = blockedState.Id;
 
             _context.Entry(user).State = EntityState.Modified;

@@ -1,14 +1,18 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:3.1 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
-WORKDIR /src
-COPY ["src/WebApi/WebApi.csproj", "WebApi/"]
+FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
+WORKDIR /build
+COPY ["src/Admin/Admin.csproj", "src/Admin/"]
+COPY ["src/Auth/Auth.csproj", "src/Auth/"]
+COPY ["src/Models/Models.csproj", "src/Models/"]
+COPY ["src/Signup/Signup.csproj", "src/Signup/"]
+COPY ["src/WebApi/WebApi.csproj", "src/WebApi/"]
 RUN dotnet restore "src/WebApi/WebApi.csproj"
 COPY . .
-WORKDIR "/src/WebApi"
+WORKDIR "/build/src/WebApi"
 RUN dotnet build "WebApi.csproj" -c Release -o /app/build
 
 FROM build AS publish

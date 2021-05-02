@@ -44,6 +44,14 @@ namespace WebApi.Tests.Controllers
 
             _activeState = context.UserStates.First(s => s.Code == UserStateCode.Active);
             _blockedState = context.UserStates.First(s => s.Code == UserStateCode.Blocked);
+
+            foreach (var user in context.Users)
+            {
+                user.StateId = _activeState.Id;
+                context.Entry(user).State = EntityState.Modified;
+            }
+
+            context.SaveChanges();
         }
 
         private UsersController CreateController(WebApiContext context)
@@ -67,7 +75,7 @@ namespace WebApi.Tests.Controllers
             var users = getResult.Value.ToList();
             var mapped = context.Users.AsEnumerable().Select(u => _mapper.Map<UserGetDto>(u));
 
-            users.Count().ShouldBe(10);
+            users.Count.ShouldBe(10);
             users.ToList().ShouldBeEquivalentTo(mapped.ToList());
         }
 
@@ -149,6 +157,55 @@ namespace WebApi.Tests.Controllers
         }
 
         [Fact]
+        public async Task AddWithInvalidGroupFails()
+        {
+            await using var context = new WebApiContext(_seeder.DbContextOptions);
+            var controller = CreateController(context);
+
+            var maxGroupId = await context.UserGroups.MaxAsync(g => g.Id);
+            var userToAdd = new UserPostDto
+            {
+                Login = "new login",
+                Password = "new password",
+                GroupId = maxGroupId + 1
+            };
+
+            var result = await controller.PostUser(userToAdd);
+            result.Result.ShouldBeAssignableTo<BadRequestResult>();
+
+            context.Users.Count().ShouldBe(10);
+        }
+
+        [Fact]
+        public async Task ChangeToInvalidGroupFails()
+        {
+            await using var context = new WebApiContext(_seeder.DbContextOptions);
+            var controller = CreateController(context);
+
+            var userToChange = await context.Users.FirstAsync();
+            var maxGroupId = await context.UserGroups.MaxAsync(g => g.Id);
+
+            var oldData = new UserPutDto
+            {
+                Id = userToChange.Id,
+                Login = userToChange.Login,
+                GroupId = userToChange.GroupId
+            };
+            var changes = new UserPutDto
+            {
+                Id = userToChange.Id,
+                Login = "new login",
+                GroupId = maxGroupId + 1
+            };
+
+            var result = await controller.PutUser(changes.Id, changes);
+            result.ShouldBeAssignableTo<BadRequestResult>();
+
+            userToChange.Login.ShouldBe(oldData.Login);
+            userToChange.GroupId.ShouldBe(oldData.GroupId);
+        }
+
+        [Fact]
         public async Task AddUserToUserGroupAndModifyUsingMatchingId()
         {
             await using var context = new WebApiContext(_seeder.DbContextOptions);
@@ -174,7 +231,7 @@ namespace WebApi.Tests.Controllers
             };
 
             var putResult = await controller.PutUser(createdUser.Id, changes);
-            putResult.ShouldBeAssignableTo<NoContentResult>();
+            putResult.ShouldBeAssignableTo<OkResult>();
 
             var getResult = await controller.GetUser(createdUser.Id);
             getResult.Result.ShouldBeAssignableTo<OkResult>();
@@ -347,7 +404,7 @@ namespace WebApi.Tests.Controllers
             };
 
             var result = await controller.PutUser(userToChange.Id, changes);
-            result.ShouldBeAssignableTo<NoContentResult>();
+            result.ShouldBeAssignableTo<OkResult>();
 
             var changedUser = await context.Users.FindAsync(userToChange.Id);
             changedUser.Login.ShouldBe(changes.Login);
@@ -414,7 +471,7 @@ namespace WebApi.Tests.Controllers
             };
 
             var result = await controller.PutUser(admin.Id, changes);
-            result.ShouldBeAssignableTo<NoContentResult>();
+            result.ShouldBeAssignableTo<OkResult>();
 
             var changedUser = await context.Users.FindAsync(admin.Id);
             changedUser.Login.ShouldBe(changes.Login);

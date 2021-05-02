@@ -17,7 +17,8 @@ namespace Admin
         public async Task<bool> CanBecomeAdmin(int? userId = null)
         {
             var admin = await _context.Users
-                .FirstOrDefaultAsync(u => u.Group.Code == UserGroupCode.Admin);
+                .FirstOrDefaultAsync(u => u.Group.Code == UserGroupCode.Admin
+                                          && u.State.Code == UserStateCode.Active);
 
             return admin == null || admin.Id == userId;
         }
