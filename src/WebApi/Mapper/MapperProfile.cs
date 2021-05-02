@@ -9,11 +9,7 @@ namespace WebApi.Mapper
         public MapperProfile()
         {
             CreateMap<User, UserGetDto>();
-            CreateMap<User, UserPostDto>();
-            CreateMap<User, UserPutDto>();
-
             CreateMap<UserGroup, UserGroupGetDto>();
-
             CreateMap<UserState, UserStateGetDto>();
         }
     }
