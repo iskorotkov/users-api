@@ -13,7 +13,8 @@ namespace Models.Migrations
 
             migrationBuilder.AddColumn<string>(
                 name: "Salt",
-                table: "users");
+                table: "users",
+                nullable: true);
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
