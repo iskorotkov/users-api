@@ -145,7 +145,7 @@ namespace WebApi.Controllers
 
         // DELETE: api/Users/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<User>> DeleteUser(int id)
+        public async Task<ActionResult<UserGetDto>> DeleteUser(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null)
@@ -159,12 +159,12 @@ namespace WebApi.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            user.State.Id = blockedState.Id;
+            user.StateId = blockedState.Id;
 
             _context.Entry(user).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
-            return user;
+            return _mapper.Map<UserGetDto>(user);
         }
 
         private bool UserExists(int id)
