@@ -18,9 +18,10 @@ Then open your browser at `http://localhost:5000/swagger/index.html` for Swagger
 
 ## Test
 
-Execute the following to run tests using the SQLite In-Memory database:
+Execute the following to run all tests using the SQLite In-Memory database:
 
 ```shell
+dotnet test --filter Mapper
 dotnet test --filter Sqlite
 ```
 
