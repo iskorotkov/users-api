@@ -10,18 +10,21 @@ namespace WebApi
     {
         public static void Main(string[] args)
         {
-            var host = CreateHostBuilder(args).Build();
-
-            using (var scope = host.Services.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<WebApiContext>();
-                dbContext.Database.Migrate();
-            }
-
+            var host = CreateHostBuilder(args)
+                .Build()
+                .ApplyMigrations();
             host.Run();
         }
 
-        private static IHostBuilder CreateHostBuilder(string[] args)
+        public static IHost ApplyMigrations(this IHost host)
+        {
+            using var scope = host.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<WebApiContext>();
+            dbContext.Database.Migrate();
+            return host;
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args)
         {
             return Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
