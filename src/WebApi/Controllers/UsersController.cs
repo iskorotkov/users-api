@@ -76,7 +76,6 @@ namespace WebApi.Controllers
             }
 
             entity.Login = user.Login;
-            entity.Password = user.Password;
             entity.GroupId = user.GroupId;
 
             _context.Entry(entity).State = EntityState.Modified;
