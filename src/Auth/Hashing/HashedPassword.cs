@@ -8,7 +8,7 @@ namespace Auth.Hashing
             Salt = salt;
         }
 
-        public string Hash { get; set; }
-        public string Salt { get; set; }
+        public string Hash { get; }
+        public string Salt { get; }
     }
 }
