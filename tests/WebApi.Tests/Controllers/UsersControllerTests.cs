@@ -49,7 +49,7 @@ namespace WebApi.Tests.Controllers
         private UsersController CreateController(WebApiContext context)
         {
             var adminElevation = new AdminElevation(context);
-            var signupThrottler = new SignupThrottler(context, TimeSpan.FromHours(1));
+            var signupThrottler = new SignupThrottler(context, TimeSpan.FromMinutes(10));
             var hasher = new PasswordHasher();
             var controller = new UsersController(context, _mapper, adminElevation, signupThrottler, hasher);
             return controller;
@@ -127,6 +127,7 @@ namespace WebApi.Tests.Controllers
             createdUser.CreatedDate.ShouldBeInRange(DateTime.Now - TimeSpan.FromSeconds(5), DateTime.Now);
 
             (await context.Users.FindAsync(createdUser.Id)).ShouldNotBeNull();
+            context.Users.Count().ShouldBe(11);
 
             var deleteResult = await controller.DeleteUser(createdUser.Id);
             deleteResult.Result.ShouldBeAssignableTo<OkResult>();
@@ -138,10 +139,13 @@ namespace WebApi.Tests.Controllers
             deletedUsed.CreatedDate.ShouldBe(createdUser.CreatedDate);
 
             (await context.Users.FindAsync(createdUser.Id)).ShouldNotBeNull();
+            context.Users.Count().ShouldBe(11);
 
             var user = await context.Users.FindAsync(createdUser.Id);
             context.Users.Remove(user);
             await context.SaveChangesAsync();
+
+            context.Users.Count().ShouldBe(10);
         }
 
         [Fact]
@@ -261,11 +265,228 @@ namespace WebApi.Tests.Controllers
             result.Result.ShouldBeAssignableTo<NotFoundResult>();
         }
 
-        // Post: admin elevation
+        [Fact]
+        public async Task AddAdminWhenNoAdminPresent()
+        {
+            await using var context = new WebApiContext(_seeder.DbContextOptions);
+            var controller = CreateController(context);
 
-        // Post: signup throttling
+            await foreach (var user in context.Users)
+            {
+                user.GroupId = _userGroup.Id;
+                context.Entry(user).State = EntityState.Modified;
+            }
 
-        // Put: admin elevation
+            await context.SaveChangesAsync();
+
+            var userToAdd = new UserPostDto
+            {
+                Login = "login",
+                Password = "password",
+                GroupId = _adminGroup.Id
+            };
+
+            var result = await controller.PostUser(userToAdd);
+            result.Result.ShouldBeAssignableTo<CreatedAtActionResult>();
+            var addedUser = (UserGetDto) ((CreatedAtActionResult) result.Result).Value;
+
+            (await context.Users.FindAsync(addedUser.Id)).ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task AddAdminWhenAdminPresentFails()
+        {
+            await using var context = new WebApiContext(_seeder.DbContextOptions);
+            var controller = CreateController(context);
+
+            var users = context.Users.ToList();
+            foreach (var user in users)
+            {
+                user.GroupId = _userGroup.Id;
+                context.Entry(user).State = EntityState.Modified;
+            }
+
+            users[new Random().Next(users.Count)].GroupId = _adminGroup.Id;
+
+            await context.SaveChangesAsync();
+
+            var userToAdd = new UserPostDto
+            {
+                Login = "login",
+                Password = "password",
+                GroupId = _adminGroup.Id
+            };
+
+            var result = await controller.PostUser(userToAdd);
+            result.Result.ShouldBeAssignableTo<BadRequestResult>();
+
+            context.Users.Count().ShouldBe(10);
+        }
+
+        [Fact]
+        public async Task ChangeUserToAdminWhenNoAdminPresent()
+        {
+            await using var context = new WebApiContext(_seeder.DbContextOptions);
+            var controller = CreateController(context);
+
+            await foreach (var user in context.Users)
+            {
+                user.GroupId = _userGroup.Id;
+                context.Entry(user).State = EntityState.Modified;
+            }
+
+            await context.SaveChangesAsync();
+
+            var userToChange = await context.Users.FirstAsync();
+
+            var changes = new UserPutDto
+            {
+                Id = userToChange.Id,
+                Login = "some new login",
+                GroupId = _adminGroup.Id,
+            };
+
+            var result = await controller.PutUser(userToChange.Id, changes);
+            result.ShouldBeAssignableTo<NoContentResult>();
+
+            var changedUser = await context.Users.FindAsync(userToChange.Id);
+            changedUser.Login.ShouldBe(changes.Login);
+            changedUser.GroupId.ShouldBe(changes.GroupId);
+        }
+
+        [Fact]
+        public async Task ChangeUserToAdminWhenAdminPresentFails()
+        {
+            await using var context = new WebApiContext(_seeder.DbContextOptions);
+            var controller = CreateController(context);
+
+            var users = context.Users.ToList();
+            foreach (var user in users)
+            {
+                user.GroupId = _userGroup.Id;
+                context.Entry(user).State = EntityState.Modified;
+            }
+
+            users[new Random().Next(users.Count)].GroupId = _adminGroup.Id;
+
+            await context.SaveChangesAsync();
+
+            var userToChange = await context.Users.FirstAsync(u => u.Group.Code != UserGroupCode.Admin);
+            var oldData = new { userToChange.Login, userToChange.GroupId };
+
+            var changes = new UserPutDto
+            {
+                Id = userToChange.Id,
+                Login = "some new login",
+                GroupId = _adminGroup.Id,
+            };
+
+            var result = await controller.PutUser(userToChange.Id, changes);
+            result.ShouldBeAssignableTo<BadRequestResult>();
+
+            userToChange.Login.ShouldBe(oldData.Login);
+            userToChange.GroupId.ShouldBe(oldData.GroupId);
+        }
+
+        [Fact]
+        public async Task ChangeAdminUserToAdminGroup()
+        {
+            await using var context = new WebApiContext(_seeder.DbContextOptions);
+            var controller = CreateController(context);
+
+            var users = context.Users.ToList();
+            foreach (var user in users)
+            {
+                user.GroupId = _userGroup.Id;
+                context.Entry(user).State = EntityState.Modified;
+            }
+
+            var admin = users[new Random().Next(users.Count)];
+            admin.GroupId = _adminGroup.Id;
+
+            await context.SaveChangesAsync();
+
+            var changes = new UserPutDto
+            {
+                Id = admin.Id,
+                Login = "some new login",
+                GroupId = _adminGroup.Id,
+            };
+
+            var result = await controller.PutUser(admin.Id, changes);
+            result.ShouldBeAssignableTo<NoContentResult>();
+
+            var changedUser = await context.Users.FindAsync(admin.Id);
+            changedUser.Login.ShouldBe(changes.Login);
+            changedUser.GroupId.ShouldBe(changes.GroupId);
+        }
+
+        [Fact]
+        public async Task AddUserWithSameLoginImmediately()
+        {
+            await using var context = new WebApiContext(_seeder.DbContextOptions);
+            var controller = CreateController(context);
+
+            var result = await controller.PostUser(new UserPostDto
+            {
+                Login = "login",
+                Password = "password",
+                GroupId = _userGroup.Id
+            });
+            var createdUser = (UserGetDto) ((CreatedAtActionResult) result.Result).Value;
+
+            result = await controller.PostUser(new UserPostDto
+            {
+                Login = "login",
+                Password = "password2",
+                GroupId = _userGroup.Id
+            });
+            result.Result.ShouldBeAssignableTo<ConflictResult>();
+
+            context.Users.Count().ShouldBe(11);
+
+            context.Users.Remove(await context.Users.FindAsync(createdUser.Id));
+            await context.SaveChangesAsync();
+        }
+
+        [Fact]
+        public async Task AddUserWithSameLoginAfterTime()
+        {
+            await using var context = new WebApiContext(_seeder.DbContextOptions);
+            var controller = CreateController(context);
+
+            var result = await controller.PostUser(new UserPostDto
+            {
+                Login = "login",
+                Password = "password",
+                GroupId = _userGroup.Id
+            });
+            var createdUser1 = (UserGetDto) ((CreatedAtActionResult) result.Result).Value;
+
+            await foreach (var user in context.Users)
+            {
+                user.CreatedDate = DateTime.Now.AddHours(-1);
+                context.Entry(user).State = EntityState.Modified;
+            }
+
+            await context.SaveChangesAsync();
+
+            result = await controller.PostUser(new UserPostDto
+            {
+                Login = "login",
+                Password = "password2",
+                GroupId = _userGroup.Id
+            });
+            result.Result.ShouldBeAssignableTo<CreatedAtActionResult>();
+            var createdUser2 = (UserGetDto) ((CreatedAtActionResult) result.Result).Value;
+
+            context.Users.Count().ShouldBe(12);
+
+            var users = await context.Users.Where(u => u.Id == createdUser1.Id || u.Id == createdUser2.Id)
+                .ToListAsync();
+            context.Users.RemoveRange(users);
+            await context.SaveChangesAsync();
+        }
     }
 
     public class SqliteUsersControllerTests : UsersControllerTests<SqliteSeeder>
