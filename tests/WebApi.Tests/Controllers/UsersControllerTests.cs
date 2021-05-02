@@ -110,6 +110,16 @@ namespace WebApi.Tests.Controllers
 
             getResult = await controller.GetUser(-1);
             getResult.Result.ShouldBeAssignableTo<NotFoundResult>();
+
+            var blockedUser = await context.Users.FirstAsync();
+            blockedUser.StateId = _blockedState.Id;
+            await context.SaveChangesAsync();
+
+            getResult = await controller.GetUser(blockedUser.Id);
+            getResult.Result.ShouldBeAssignableTo<NotFoundResult>();
+
+            blockedUser.StateId = _activeState.Id;
+            await context.SaveChangesAsync();
         }
 
         [Fact]
@@ -305,6 +315,21 @@ namespace WebApi.Tests.Controllers
                 GroupId = 0
             });
             result.ShouldBeAssignableTo<NotFoundResult>();
+
+            var blockedUser = await context.Users.FirstAsync();
+            blockedUser.StateId = _blockedState.Id;
+            await context.SaveChangesAsync();
+
+            result = await controller.PutUser(blockedUser.Id, new UserPutDto
+            {
+                Id = blockedUser.Id,
+                Login = "",
+                GroupId = 0
+            });
+            result.ShouldBeAssignableTo<NotFoundResult>();
+
+            blockedUser.StateId = _activeState.Id;
+            await context.SaveChangesAsync();
         }
 
         [Fact]
@@ -320,6 +345,16 @@ namespace WebApi.Tests.Controllers
 
             result = await controller.DeleteUser(-1);
             result.Result.ShouldBeAssignableTo<NotFoundResult>();
+
+            var blockedUser = await context.Users.FirstAsync();
+            blockedUser.StateId = _blockedState.Id;
+            await context.SaveChangesAsync();
+
+            result = await controller.DeleteUser(blockedUser.Id);
+            result.Result.ShouldBeAssignableTo<NotFoundResult>();
+
+            blockedUser.StateId = _activeState.Id;
+            await context.SaveChangesAsync();
         }
 
         [Fact]
@@ -429,7 +464,7 @@ namespace WebApi.Tests.Controllers
             await context.SaveChangesAsync();
 
             var userToChange = await context.Users.FirstAsync(u => u.Group.Code != UserGroupCode.Admin);
-            var oldData = new { userToChange.Login, userToChange.GroupId };
+            var oldData = new {userToChange.Login, userToChange.GroupId};
 
             var changes = new UserPutDto
             {

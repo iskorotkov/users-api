@@ -26,11 +26,13 @@ namespace Admin.Tests.AdminElevationTests
 
             _userGroup = context.UserGroups.First(g => g.Code == UserGroupCode.User);
             _adminGroup = context.UserGroups.First(g => g.Code == UserGroupCode.Admin);
+            var activeState = context.UserStates.First(s => s.Code == UserStateCode.Active);
 
             var users = context.Users.ToList();
             foreach (var user in users)
             {
                 user.GroupId = _userGroup.Id;
+                user.StateId = activeState.Id;
                 context.Entry(user).State = EntityState.Modified;
             }
 
