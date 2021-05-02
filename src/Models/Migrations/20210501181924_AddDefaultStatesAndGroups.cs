@@ -22,8 +22,11 @@ namespace Models.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DeleteData("user_states", "Id", new [] { new { Id = 1 } , new { Id = 2 } });
-            migrationBuilder.DeleteData("user_groups", "Id", new[] { new { Id = 1 }, new { Id = 2 } });
+            migrationBuilder.DeleteData("user_states", "Id", 1);
+            migrationBuilder.DeleteData("user_states", "Id", 2);
+            
+            migrationBuilder.DeleteData("user_groups", "Id", 1);
+            migrationBuilder.DeleteData("user_groups", "Id", 2);
         }
     }
 }
