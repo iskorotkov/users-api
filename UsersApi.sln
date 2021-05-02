@@ -10,6 +10,7 @@ ProjectSection(SolutionItems) = preProject
 	.gitignore = .gitignore
 	docker-compose.yml = docker-compose.yml
 	.env = .env
+	Makefile = Makefile
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "src\WebApi\WebApi.csproj", "{87B3DF19-0ADD-4F98-B8CE-21C896B31C7B}"
