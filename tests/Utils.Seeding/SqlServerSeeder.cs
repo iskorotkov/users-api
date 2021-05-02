@@ -9,15 +9,22 @@ using WebApi;
 
 namespace Utils.Seeding
 {
-    public class SqlServerSeeder : ISeeder
+    public class SqlServerSeeder : ISeeder, IDisposable
     {
         public DbContextOptions<WebApiContext> DbContextOptions { get; }
+        private readonly IServiceScope _serviceScope;
 
         public SqlServerSeeder()
         {
-            var host = Program.CreateHostBuilder(new string[] { }).Build().ApplyMigrations();
-            var scope = host.Services.CreateScope();
-            DbContextOptions = scope.ServiceProvider.GetRequiredService<DbContextOptions<WebApiContext>>();
+            var host = Program.CreateHostBuilder(new string[] { }).Build();
+            
+            _serviceScope = host.Services.CreateScope();
+            DbContextOptions = _serviceScope.ServiceProvider.GetRequiredService<DbContextOptions<WebApiContext>>();
+            
+            using var context = new WebApiContext(DbContextOptions);
+            context.Database.EnsureDeleted();
+            context.Database.Migrate();
+
             Seed();
         }
 
@@ -26,9 +33,6 @@ namespace Utils.Seeding
             var rand = new Random();
 
             using var context = new WebApiContext(DbContextOptions);
-
-            context.Database.EnsureDeleted();
-            context.Database.Migrate();
 
             var groups = context.UserGroups.Select(g => g.Id).ToList();
             var states = context.UserStates.Select(s => s.Id).ToList();
@@ -49,6 +53,11 @@ namespace Utils.Seeding
 
             context.AddRange(usersToAdd);
             context.SaveChanges();
+        }
+
+        public void Dispose()
+        {
+            _serviceScope?.Dispose();
         }
     }
 }
