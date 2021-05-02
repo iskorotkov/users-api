@@ -1,5 +1,7 @@
 # Users API
 
+[![.NET](https://github.com/iskorotkov/users-api/actions/workflows/dotnet.yml/badge.svg)](https://github.com/iskorotkov/users-api/actions/workflows/dotnet.yml)
+
 The service provides functionality to create/read/update/delete users via Web API. All data is stored in SQL Server 2019.
 
 ## Run
