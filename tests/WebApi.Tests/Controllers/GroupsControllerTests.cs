@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Db.Context;
 using Microsoft.Extensions.DependencyInjection;
-using Models.Context;
 using Models.Enums;
 using Shouldly;
 using Utils.Seeding;
@@ -11,9 +11,9 @@ using Xunit;
 
 namespace WebApi.Tests.Controllers
 {
-    public abstract class GroupsControllerTests<T> where T : ISeeder, new()
+    public abstract class GroupsControllerTests<T> where T : Seeder, new()
     {
-        private readonly ISeeder _seeder;
+        private readonly Seeder _seeder;
         private readonly IMapper _mapper;
 
         protected GroupsControllerTests()

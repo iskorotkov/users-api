@@ -1,16 +1,16 @@
 using System;
 using System.Threading.Tasks;
+using Db.Context;
 using Microsoft.EntityFrameworkCore;
-using Models.Context;
 using Shouldly;
 using Utils.Seeding;
 using Xunit;
 
 namespace Signup.Tests.SignupThrottlerTests
 {
-    public abstract class UserWasRecentlyAdded<T> where T : ISeeder, new()
+    public abstract class UserWasRecentlyAdded<T> where T : Seeder, new()
     {
-        private readonly ISeeder _seeder;
+        private readonly Seeder _seeder;
 
         protected UserWasRecentlyAdded()
         {

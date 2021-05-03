@@ -1,18 +1,16 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Models.Context;
+using Db.Context;
 using Models.Entities;
-using Models.Enums;
 using Shouldly;
 using Utils.Seeding;
 using Xunit;
 
 namespace Admin.Tests.AdminElevationTests
 {
-    public abstract class NoAdminsPresent<T> where T : ISeeder, new()
+    public abstract class NoAdminsPresent<T> where T : Seeder, new()
     {
-        private readonly ISeeder _seeder;
+        private readonly Seeder _seeder;
         private readonly UserGroup _userGroup;
         private readonly UserGroup _adminGroup;
 
@@ -22,16 +20,11 @@ namespace Admin.Tests.AdminElevationTests
 
             using var context = new WebApiContext(_seeder.DbContextOptions);
 
-            _userGroup = context.UserGroups.First(g => g.Code == UserGroupCode.User);
-            _adminGroup = context.UserGroups.First(g => g.Code == UserGroupCode.Admin);
+            _userGroup = context.GetUserGroup();
+            _adminGroup = context.GetAdminGroup();
 
-            foreach (var user in context.Users)
-            {
-                user.GroupId = _userGroup.Id;
-                context.Entry(user).State = EntityState.Modified;
-            }
-
-            context.SaveChanges();
+            _seeder.MakeAllActive();
+            _seeder.MakeNoAdmins();
         }
 
         [Fact]

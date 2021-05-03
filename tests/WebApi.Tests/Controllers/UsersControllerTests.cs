@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using Admin;
 using Auth.Hashing;
 using AutoMapper;
+using Db.Context;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Models.Context;
 using Models.Entities;
 using Models.Enums;
 using Shouldly;
@@ -19,10 +19,10 @@ using Xunit;
 
 namespace WebApi.Tests.Controllers
 {
-    public abstract class UsersControllerTests<T> where T : ISeeder, new()
+    public abstract class UsersControllerTests<T> where T : Seeder, new()
     {
         private readonly IMapper _mapper;
-        private readonly ISeeder _seeder;
+        private readonly Seeder _seeder;
 
         private readonly UserGroup _adminGroup;
         private readonly UserGroup _userGroup;
@@ -39,19 +39,13 @@ namespace WebApi.Tests.Controllers
 
             using var context = new WebApiContext(_seeder.DbContextOptions);
 
-            _adminGroup = context.UserGroups.First(g => g.Code == UserGroupCode.Admin);
-            _userGroup = context.UserGroups.First(g => g.Code == UserGroupCode.User);
+            _adminGroup = context.GetAdminGroup();
+            _userGroup = context.GetUserGroup();
 
-            _activeState = context.UserStates.First(s => s.Code == UserStateCode.Active);
-            _blockedState = context.UserStates.First(s => s.Code == UserStateCode.Blocked);
+            _activeState = context.GetActiveState();
+            _blockedState = context.GetBlockedState();
 
-            foreach (var user in context.Users)
-            {
-                user.StateId = _activeState.Id;
-                context.Entry(user).State = EntityState.Modified;
-            }
-
-            context.SaveChanges();
+            _seeder.MakeAllActive();
         }
 
         private UsersController CreateController(WebApiContext context)

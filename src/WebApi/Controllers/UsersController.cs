@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Admin;
 using Auth.Hashing;
 using AutoMapper;
+using Db.Context;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Models.Context;
 using Models.Entities;
 using Models.Enums;
 using Signup;
@@ -40,8 +40,7 @@ namespace WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserGetDto>>> GetUsers()
         {
-            return await _context.Users
-                .Where(u => u.State.Code == UserStateCode.Active)
+            return await _context.GetActiveUsers()
                 .Include(u => u.Group)
                 .Include(u => u.State)
                 .Select(user => _mapper.Map<UserGetDto>(user))
@@ -52,11 +51,11 @@ namespace WebApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<UserGetDto>> GetUser(int id)
         {
-            var user = await _context.Users
+            var user = await _context.GetActiveUsers()
                 .Include(u => u.Group)
                 .Include(u => u.State)
                 .FirstOrDefaultAsync(u => u.Id == id);
-            if (user == null || user.State.Code != UserStateCode.Active)
+            if (user == null)
             {
                 return NotFound();
             }
@@ -76,10 +75,9 @@ namespace WebApi.Controllers
             await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
-                var entity = await _context.Users
-                    .Include(u => u.State)
+                var entity = await _context.GetActiveUsers()
                     .FirstOrDefaultAsync(u => u.Id == user.Id);
-                if (entity == null || entity.State.Code != UserStateCode.Active)
+                if (entity == null)
                 {
                     return NotFound();
                 }
@@ -137,7 +135,7 @@ namespace WebApi.Controllers
                     return Conflict();
                 }
 
-                var activeState = await _context.UserStates.FirstAsync(s => s.Code == UserStateCode.Active);
+                var activeState = await _context.GetActiveStateAsync();
                 var hashed = _passwordHasher.Hash(user.Password);
                 var entity = new User
                 {
@@ -169,15 +167,14 @@ namespace WebApi.Controllers
             await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
-                var user = await _context.Users
-                    .Include(u => u.State)
+                var user = await _context.GetActiveUsers()
                     .FirstOrDefaultAsync(u => u.Id == id);
-                if (user == null || user.State.Code != UserStateCode.Active)
+                if (user == null)
                 {
                     return NotFound();
                 }
 
-                var blockedState = await _context.UserStates.FirstAsync(s => s.Code == UserStateCode.Blocked);
+                var blockedState = await _context.GetBlockedStateAsync();
                 user.StateId = blockedState.Id;
 
                 _context.Entry(user).State = EntityState.Modified;

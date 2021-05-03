@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Models.Context;
+using Db.Context;
 using Models.Enums;
 
 namespace Admin
@@ -16,10 +15,7 @@ namespace Admin
 
         public async Task<bool> CanBecomeAdmin(int? userId = null)
         {
-            var admin = await _context.Users
-                .FirstOrDefaultAsync(u => u.Group.Code == UserGroupCode.Admin
-                                          && u.State.Code == UserStateCode.Active);
-
+            var admin = await _context.GetAdminAsync();
             return admin == null || admin.Id == userId;
         }
 

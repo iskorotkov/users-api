@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Db.Context;
 using Microsoft.EntityFrameworkCore;
-using Models.Context;
 
 namespace Signup
 {

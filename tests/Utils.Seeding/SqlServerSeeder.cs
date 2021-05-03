@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Db.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Models.Context;
 using Models.Entities;
 using WebApi;
 
 namespace Utils.Seeding
 {
-    public class SqlServerSeeder : ISeeder, IDisposable
+    public class SqlServerSeeder : Seeder, IDisposable
     {
-        public DbContextOptions<WebApiContext> DbContextOptions { get; }
+        public sealed override DbContextOptions<WebApiContext> DbContextOptions { get; }
         private readonly IServiceScope _serviceScope;
 
         public SqlServerSeeder()

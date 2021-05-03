@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using Db.Context;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Models.Context;
 using Models.Entities;
 using Models.Enums;
 
 namespace Utils.Seeding
 {
-    public class SqliteSeeder : ISeeder, IDisposable
+    public class SqliteSeeder : Seeder, IDisposable
     {
         private readonly DbConnection _connection;
 
@@ -29,7 +29,7 @@ namespace Utils.Seeding
             _connection?.Dispose();
         }
 
-        public DbContextOptions<WebApiContext> DbContextOptions { get; }
+        public override DbContextOptions<WebApiContext> DbContextOptions { get; }
 
         private static DbConnection CreateInMemoryDatabase()
         {

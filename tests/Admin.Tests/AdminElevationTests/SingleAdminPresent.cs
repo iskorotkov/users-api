@@ -1,22 +1,19 @@
-using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Models.Context;
+using Db.Context;
 using Models.Entities;
-using Models.Enums;
 using Shouldly;
 using Utils.Seeding;
 using Xunit;
 
 namespace Admin.Tests.AdminElevationTests
 {
-    public abstract class SingleAdminPresent<T> where T : ISeeder, new()
+    public abstract class SingleAdminPresent<T> where T : Seeder, new()
     {
-        private readonly ISeeder _seeder;
-        private readonly UserGroup _userGroup;
-        private readonly UserGroup _adminGroup;
         private readonly User _admin;
+        private readonly UserGroup _adminGroup;
+        private readonly Seeder _seeder;
+        private readonly UserGroup _userGroup;
 
         protected SingleAdminPresent()
         {
@@ -24,21 +21,13 @@ namespace Admin.Tests.AdminElevationTests
 
             using var context = new WebApiContext(_seeder.DbContextOptions);
 
-            _userGroup = context.UserGroups.First(g => g.Code == UserGroupCode.User);
-            _adminGroup = context.UserGroups.First(g => g.Code == UserGroupCode.Admin);
-            var activeState = context.UserStates.First(s => s.Code == UserStateCode.Active);
+            _userGroup = context.GetUserGroup();
+            _adminGroup = context.GetAdminGroup();
 
-            var users = context.Users.ToList();
-            foreach (var user in users)
-            {
-                user.GroupId = _userGroup.Id;
-                user.StateId = activeState.Id;
-                context.Entry(user).State = EntityState.Modified;
-            }
-
-            _admin = users[new Random().Next(users.Count)];
+            _seeder.MakeAllActive();
+            _admin = _seeder.MakeSingleAdmin();
+            
             _admin.GroupId = _adminGroup.Id;
-
             context.SaveChanges();
         }
 

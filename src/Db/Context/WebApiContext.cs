@@ -1,7 +1,10 @@
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Models.Entities;
+using Models.Enums;
 
-namespace Models.Context
+namespace Db.Context
 {
     public sealed class WebApiContext : DbContext
     {
@@ -12,6 +15,39 @@ namespace Models.Context
         public DbSet<User> Users { get; set; }
         public DbSet<UserGroup> UserGroups { get; set; }
         public DbSet<UserState> UserStates { get; set; }
+
+        public IQueryable<User> GetActiveUsers() =>
+            Users.Where(u => u.State.Code == UserStateCode.Active);
+
+        public async Task<User> GetAdminAsync() => await GetActiveUsers()
+            .FirstOrDefaultAsync(u => u.Group.Code == UserGroupCode.Admin);
+
+        public async Task<UserGroup> GetAdminGroupAsync() =>
+            await UserGroups.FirstOrDefaultAsync(g => g.Code == UserGroupCode.Admin);
+
+        public async Task<UserGroup> GetUserGroupAsync() =>
+            await UserGroups.FirstOrDefaultAsync(g => g.Code == UserGroupCode.User);
+
+        public async Task<UserState> GetActiveStateAsync() =>
+            await UserStates.FirstOrDefaultAsync(s => s.Code == UserStateCode.Active);
+
+        public async Task<UserState> GetBlockedStateAsync() =>
+            await UserStates.FirstOrDefaultAsync(s => s.Code == UserStateCode.Blocked);
+
+        public User GetAdmin() => GetActiveUsers()
+            .FirstOrDefault(u => u.Group.Code == UserGroupCode.Admin);
+
+        public UserGroup GetAdminGroup() =>
+            UserGroups.FirstOrDefault(g => g.Code == UserGroupCode.Admin);
+
+        public UserGroup GetUserGroup() =>
+            UserGroups.FirstOrDefault(g => g.Code == UserGroupCode.User);
+
+        public UserState GetActiveState() =>
+            UserStates.FirstOrDefault(s => s.Code == UserStateCode.Active);
+
+        public UserState GetBlockedState() =>
+            UserStates.FirstOrDefault(s => s.Code == UserStateCode.Blocked);
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

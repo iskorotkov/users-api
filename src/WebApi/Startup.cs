@@ -2,6 +2,7 @@ using System;
 using System.Text.Json.Serialization;
 using Admin;
 using Auth.Hashing;
+using Db.Context;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using Models.Context;
 using Signup;
 using WebApi.Mapper;
 
