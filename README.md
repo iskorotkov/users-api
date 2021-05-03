@@ -5,6 +5,17 @@
 
 The service provides functionality to create/read/update/delete users via Web API. All data is stored in SQL Server 2019.
 
+- [Users API](#users-api)
+  - [Run](#run)
+  - [Test](#test)
+  - [Project structure](#project-structure)
+    - [Admin](#admin)
+    - [Auth](#auth)
+    - [Db](#db)
+    - [Models](#models)
+    - [Signup](#signup)
+    - [WebApi](#webapi)
+
 ## Run
 
 To run both SQL Server and Users API run the following:
@@ -33,3 +44,29 @@ dotnet test -t
 # Execute tests from class SqlServerUsersControllerTests.
 dotnet test --filter SqlServerUsersControllerTests
 ```
+
+## Project structure
+
+### Admin
+
+Admin group and changing a user to be in the admin group.
+
+### Auth
+
+Password hashing for newly created users.
+
+### Db
+
+DbContext and migrations.
+
+### Models
+
+Entities.
+
+### Signup
+
+Timeout after user creation for other requests to create a user with the same login.
+
+### WebApi
+
+Controllers and configuration.
