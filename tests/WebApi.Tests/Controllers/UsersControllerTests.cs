@@ -8,7 +8,6 @@ using Db.Context;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Models.Entities;
 using Models.Enums;
 using Shouldly;
 using Signup;
@@ -24,11 +23,11 @@ namespace WebApi.Tests.Controllers
         private readonly IMapper _mapper;
         private readonly Seeder _seeder;
 
-        private readonly UserGroup _adminGroup;
-        private readonly UserGroup _userGroup;
+        private readonly UserGroupGetDto _adminGroup;
+        private readonly UserGroupGetDto _userGroup;
 
-        private readonly UserState _activeState;
-        private readonly UserState _blockedState;
+        private readonly UserStateGetDto _activeState;
+        private readonly UserStateGetDto _blockedState;
 
         protected UsersControllerTests()
         {
@@ -39,11 +38,11 @@ namespace WebApi.Tests.Controllers
 
             using var context = new WebApiContext(_seeder.DbContextOptions);
 
-            _adminGroup = context.GetAdminGroup();
-            _userGroup = context.GetUserGroup();
+            _adminGroup = _mapper.Map<UserGroupGetDto>(context.GetAdminGroup());
+            _userGroup = _mapper.Map<UserGroupGetDto>(context.GetUserGroup());
 
-            _activeState = context.GetActiveState();
-            _blockedState = context.GetBlockedState();
+            _activeState = _mapper.Map<UserStateGetDto>(context.GetActiveState());
+            _blockedState = _mapper.Map<UserStateGetDto>(context.GetBlockedState());
 
             _seeder.MakeAllActive();
         }
@@ -134,8 +133,8 @@ namespace WebApi.Tests.Controllers
 
             var createdUser = (UserGetDto) ((CreatedAtActionResult) postResult.Result).Value;
             createdUser.Login.ShouldBe(userToAdd.Login);
-            createdUser.Group.ShouldBeEquivalentTo(_mapper.Map<UserGroupGetDto>(_userGroup));
-            createdUser.State.ShouldBeEquivalentTo(_mapper.Map<UserStateGetDto>(_activeState));
+            createdUser.Group.ShouldBeEquivalentTo(_userGroup);
+            createdUser.State.ShouldBeEquivalentTo(_activeState);
             createdUser.CreatedDate.ShouldBeInRange(DateTime.Now - TimeSpan.FromSeconds(5), DateTime.Now);
 
             (await context.Users.FindAsync(createdUser.Id)).ShouldNotBeNull();
@@ -146,8 +145,8 @@ namespace WebApi.Tests.Controllers
 
             var deletedUsed = deleteResult.Value;
             deletedUsed.Login.ShouldBe(userToAdd.Login);
-            deletedUsed.Group.ShouldBeEquivalentTo(_mapper.Map<UserGroupGetDto>(_userGroup));
-            deletedUsed.State.ShouldBeEquivalentTo(_mapper.Map<UserStateGetDto>(_blockedState));
+            deletedUsed.Group.ShouldBeEquivalentTo(_userGroup);
+            deletedUsed.State.ShouldBeEquivalentTo(_blockedState);
             deletedUsed.CreatedDate.ShouldBe(createdUser.CreatedDate);
 
             (await context.Users.FindAsync(createdUser.Id)).ShouldNotBeNull();
@@ -244,8 +243,8 @@ namespace WebApi.Tests.Controllers
 
             changedUser.Id.ShouldBe(createdUser.Id);
             changedUser.Login.ShouldBe(changes.Login);
-            changedUser.State.ShouldBeEquivalentTo(_mapper.Map<UserStateGetDto>(_activeState));
-            changedUser.Group.ShouldBeEquivalentTo(_mapper.Map<UserGroupGetDto>(_userGroup));
+            changedUser.State.ShouldBeEquivalentTo(_activeState);
+            changedUser.Group.ShouldBeEquivalentTo(_userGroup);
             changedUser.CreatedDate.ShouldBe(createdUser.CreatedDate);
 
             var user = await context.Users.FindAsync(createdUser.Id);
@@ -458,7 +457,7 @@ namespace WebApi.Tests.Controllers
             await context.SaveChangesAsync();
 
             var userToChange = await context.Users.FirstAsync(u => u.Group.Code != UserGroupCode.Admin);
-            var oldData = new {userToChange.Login, userToChange.GroupId};
+            var oldData = new { userToChange.Login, userToChange.GroupId };
 
             var changes = new UserPutDto
             {
