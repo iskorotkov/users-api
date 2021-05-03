@@ -9,12 +9,6 @@ The service provides functionality to create/read/update/delete users via Web AP
   - [Run](#run)
   - [Test](#test)
   - [Project structure](#project-structure)
-    - [Admin](#admin)
-    - [Auth](#auth)
-    - [Db](#db)
-    - [Models](#models)
-    - [Signup](#signup)
-    - [WebApi](#webapi)
 
 ## Run
 
@@ -47,26 +41,9 @@ dotnet test --filter SqlServerUsersControllerTests
 
 ## Project structure
 
-### Admin
-
-Admin group and changing a user to be in the admin group.
-
-### Auth
-
-Password hashing for newly created users.
-
-### Db
-
-DbContext and migrations.
-
-### Models
-
-Entities.
-
-### Signup
-
-Timeout after user creation for other requests to create a user with the same login.
-
-### WebApi
-
-Controllers and configuration.
+- Admin - admin group and changing a user to be in the admin group.
+- Auth - password hashing for newly created users.
+- Db - DbContext and migrations.
+- Models - entities and enums.
+- Signup - timeout after user creation for other requests to create a user with the same login.
+- WebApi - controllers and configuration.
