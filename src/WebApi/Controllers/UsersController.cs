@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Admin;
@@ -72,32 +73,36 @@ namespace WebApi.Controllers
                 return BadRequest();
             }
 
-            var entity = await _context.Users
-                .Include(u => u.State)
-                .FirstOrDefaultAsync(u => u.Id == user.Id);
-            if (entity == null || entity.State.Code != UserStateCode.Active)
-            {
-                return NotFound();
-            }
-
-            if (await _context.UserGroups.FindAsync(user.GroupId) == null)
-            {
-                return BadRequest();
-            }
-
-            if (!await _adminElevation.CanEnterGroup(user.GroupId, user.Id))
-            {
-                return BadRequest();
-            }
-
-            entity.Login = user.Login;
-            entity.GroupId = user.GroupId;
-
-            _context.Entry(entity).State = EntityState.Modified;
-
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
+                var entity = await _context.Users
+                    .Include(u => u.State)
+                    .FirstOrDefaultAsync(u => u.Id == user.Id);
+                if (entity == null || entity.State.Code != UserStateCode.Active)
+                {
+                    return NotFound();
+                }
+
+                if (await _context.UserGroups.FindAsync(user.GroupId) == null)
+                {
+                    return BadRequest();
+                }
+
+                if (!await _adminElevation.CanEnterGroup(user.GroupId, user.Id))
+                {
+                    return BadRequest();
+                }
+
+                entity.Login = user.Login;
+                entity.GroupId = user.GroupId;
+
+                _context.Entry(entity).State = EntityState.Modified;
+
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -106,68 +111,86 @@ namespace WebApi.Controllers
                     return NotFound();
                 }
 
-                throw;
+                return Conflict();
             }
-
-            return Ok();
         }
 
         // POST: api/Users
         [HttpPost]
         public async Task<ActionResult<UserGetDto>> PostUser(UserPostDto user)
         {
-            if (await _context.UserGroups.FindAsync(user.GroupId) == null)
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            try
             {
-                return BadRequest();
-            }
+                if (await _context.UserGroups.FindAsync(user.GroupId) == null)
+                {
+                    return BadRequest();
+                }
 
-            if (!await _adminElevation.CanEnterGroup(user.GroupId))
-            {
-                return BadRequest();
-            }
+                if (!await _adminElevation.CanEnterGroup(user.GroupId))
+                {
+                    return BadRequest();
+                }
 
-            if (!await _signupThrottler.IsSignupAllowed(user.Login))
+                if (!await _signupThrottler.IsSignupAllowed(user.Login))
+                {
+                    return Conflict();
+                }
+
+                var activeState = await _context.UserStates.FirstAsync(s => s.Code == UserStateCode.Active);
+                var hashed = _passwordHasher.Hash(user.Password);
+                var entity = new User
+                {
+                    Login = user.Login,
+                    PasswordHash = hashed.Hash,
+                    Salt = hashed.Salt,
+                    CreatedDate = DateTime.Now,
+                    GroupId = user.GroupId,
+                    StateId = activeState.Id
+                };
+
+                _context.Users.Add(entity);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return CreatedAtAction("GetUser", new { id = entity.Id }, _mapper.Map<UserGetDto>(entity));
+            }
+            catch (DBConcurrencyException e)
             {
+                Console.WriteLine(e);
                 return Conflict();
             }
-
-            var activeState = await _context.UserStates.FirstAsync(s => s.Code == UserStateCode.Active);
-            var hashed = _passwordHasher.Hash(user.Password);
-            var entity = new User
-            {
-                Login = user.Login,
-                PasswordHash = hashed.Hash,
-                Salt = hashed.Salt,
-                CreatedDate = DateTime.Now,
-                GroupId = user.GroupId,
-                StateId = activeState.Id
-            };
-
-            _context.Users.Add(entity);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetUser", new {id = entity.Id}, _mapper.Map<UserGetDto>(entity));
         }
 
         // DELETE: api/Users/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<UserGetDto>> DeleteUser(int id)
         {
-            var user = await _context.Users
-                .Include(u=>u.State)
-                .FirstOrDefaultAsync(u => u.Id == id);
-            if (user == null || user.State.Code != UserStateCode.Active)
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            try
             {
-                return NotFound();
+                var user = await _context.Users
+                    .Include(u => u.State)
+                    .FirstOrDefaultAsync(u => u.Id == id);
+                if (user == null || user.State.Code != UserStateCode.Active)
+                {
+                    return NotFound();
+                }
+
+                var blockedState = await _context.UserStates.FirstAsync(s => s.Code == UserStateCode.Blocked);
+                user.StateId = blockedState.Id;
+
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return _mapper.Map<UserGetDto>(user);
             }
-
-            var blockedState = await _context.UserStates.FirstAsync(s => s.Code == UserStateCode.Blocked);
-            user.StateId = blockedState.Id;
-
-            _context.Entry(user).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            return _mapper.Map<UserGetDto>(user);
+            catch (DBConcurrencyException e)
+            {
+                Console.WriteLine(e);
+                return Conflict();
+            }
         }
 
         private bool UserExists(int id)
